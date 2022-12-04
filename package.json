@@ -11,6 +11,7 @@
     "@types/react": "^18.0.26",
     "@types/react-dom": "^18.0.9",
     "@types/react-router-dom": "^5.3.3",
+    "@xstate/react": "^3.0.1",
     "axios": "^1.2.0",
     "axios-mock-adapter": "^1.21.2",
     "bootstrap": "^5.2.3",

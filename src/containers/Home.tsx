@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import { useMachine } from "@xstate/react";
 import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
@@ -8,6 +9,7 @@ import { AxiosResponse, AxiosProgressEvent } from "axios";
 import { toast } from "react-toastify";
 
 import axiosInstance from "../service/index";
+import { uploadMachine } from "../machine/upload";
 
 interface GetUploadURLResponse {
   repository: {
@@ -19,6 +21,8 @@ interface GetUploadURLResponse {
 const Home = () => {
   const [files, setFiles] = useState<FileList | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [state, send] = useMachine(uploadMachine);
 
   function getUploadURL() {
     if (!files?.length) {
@@ -35,7 +39,6 @@ const Home = () => {
   }
 
   function onUploadProgress(event: AxiosProgressEvent) {
-    console.log(event);
     if (event?.total) setUploadProgress((event.loaded / event.total) * 100);
   }
 
@@ -47,12 +50,16 @@ const Home = () => {
       formData.append("images", file);
     }
 
+    send("UPLOAD");
     axiosInstance
       .post(url, { files: formData }, { onUploadProgress })
-      .then(function (response) {
-        toast.success("Uploading success!");
+      .then(function () {
+        send("SUCCESS");
+        toast.success("Uploading succed!");
       })
       .catch(function (error) {
+        send("FAIL");
+        toast.error("Uploading fail!");
         console.log(error);
       });
   }
@@ -61,17 +68,24 @@ const Home = () => {
     setFiles(e.target.files);
   }
 
+  function retryUpload() {
+    send("RETRY");
+    setFiles(null);
+    setUploadProgress(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
   return (
     <Container className="mt-5">
       <h1 className="text-center">Upload Page</h1>
-      <Form.Group
-        controlId="formFile"
-        onChange={handleFileChange}
-        className="mt-5"
-      >
-        <Form.Control type="file" multiple />
+      <Form.Group onChange={handleFileChange} className="mt-5">
+        <Form.Control type="file" ref={fileInputRef} multiple />
       </Form.Group>
-      <ProgressBar animated now={uploadProgress} className="mt-3" />
+      {state.matches("uploading") && (
+        <ProgressBar animated now={uploadProgress} className="mt-3" />
+      )}
       <Stack
         gap={2}
         className="mt-3 text-center justify-content-center"
@@ -80,8 +94,12 @@ const Home = () => {
         <Button variant="primary" onClick={getUploadURL}>
           Upload
         </Button>
-        <Button variant="secondary">Retry</Button>
-        <Button variant="danger">Cancel</Button>
+        {(state.matches("success") || state.matches("fail")) && (
+          <Button variant="secondary" onClick={retryUpload}>
+            Retry
+          </Button>
+        )}
+        {state.matches("uploading") && <Button variant="danger">Cancel</Button>}
       </Stack>
     </Container>
   );
