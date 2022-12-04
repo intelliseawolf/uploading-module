@@ -22,7 +22,7 @@ const Home = () => {
 
   function getUploadURL() {
     if (!files?.length) {
-      toast("No uploaded files!");
+      toast.error("No uploaded files!");
       return;
     }
 
@@ -50,7 +50,7 @@ const Home = () => {
     axiosInstance
       .post(url, { files: formData }, { onUploadProgress })
       .then(function (response) {
-        toast("Uploading success!");
+        toast.success("Uploading success!");
       })
       .catch(function (error) {
         console.log(error);
@@ -63,7 +63,7 @@ const Home = () => {
 
   return (
     <Container className="mt-5">
-      <h1 className="text-center">Uploading Page</h1>
+      <h1 className="text-center">Upload Page</h1>
       <Form.Group
         controlId="formFile"
         onChange={handleFileChange}
