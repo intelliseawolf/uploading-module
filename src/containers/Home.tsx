@@ -60,7 +60,6 @@ const Home = () => {
       .catch(function (error) {
         send("FAIL");
         toast.error("Uploading fail!");
-        console.log(error);
       });
   }
 
@@ -91,9 +90,11 @@ const Home = () => {
         className="mt-3 text-center justify-content-center"
         direction="horizontal"
       >
-        <Button variant="primary" onClick={getUploadURL}>
-          Upload
-        </Button>
+        {state.matches("idle") && (
+          <Button variant="primary" onClick={getUploadURL}>
+            Upload
+          </Button>
+        )}
         {(state.matches("success") || state.matches("fail")) && (
           <Button variant="secondary" onClick={retryUpload}>
             Retry

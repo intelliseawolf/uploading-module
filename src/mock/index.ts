@@ -6,19 +6,29 @@ import axiosInstance from "../service";
 
 const mock = new MockAdapter(axiosInstance);
 
+const uploadURL = new RegExp(`/uploadFile/*`);
+
 function generateUploadURL() {
   return "https://localhost:3001/uploadFile/" + randomstring.generate();
+}
+
+function generateRandomBoolean() {
+  return Math.random() < 0.8;
+}
+
+function sleep(value: number) {
+  return new Promise((resolve) => setTimeout(resolve, value));
 }
 
 mock.onGet("/getUploadURL").reply(200, {
   repository: { id: uuid(), uploadURL: generateUploadURL() },
 });
 
-const uploadURL = new RegExp(`/uploadFile/*`);
-const sleep = (value: number) =>
-  new Promise((resolve) => setTimeout(resolve, value));
-
 mock.onPost(uploadURL).reply(async function (config) {
+  if (!generateRandomBoolean()) {
+    return [500];
+  }
+
   const total: number = 1024;
   const bytes: number = 1024;
 
