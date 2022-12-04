@@ -8,7 +8,7 @@ import ProgressBar from "react-bootstrap/ProgressBar";
 import { AxiosResponse, AxiosProgressEvent } from "axios";
 import { toast } from "react-toastify";
 
-import axiosInstance from "../service/index";
+import axiosInstance, { axiosRequest } from "../service/index";
 import { uploadMachine } from "../machine/upload";
 
 interface GetUploadURLResponse {
@@ -24,7 +24,7 @@ const Home = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [state, send] = useMachine(uploadMachine);
 
-  function getUploadURL() {
+  function startUpload() {
     if (!files?.length) {
       toast.error("No uploaded files!");
       return;
@@ -52,7 +52,11 @@ const Home = () => {
 
     send("UPLOAD");
     axiosInstance
-      .post(url, { files: formData }, { onUploadProgress })
+      .post(
+        url,
+        { files: formData },
+        { onUploadProgress, cancelToken: axiosRequest.token }
+      )
       .then(function () {
         send("SUCCESS");
         toast.success("Uploading succed!");
@@ -68,12 +72,22 @@ const Home = () => {
   }
 
   function retryUpload() {
-    send("RETRY");
-    setFiles(null);
+    send("RESET");
+    setUploadProgress(0);
+    startUpload();
+  }
+
+  function resetUpload() {
+    send("RESET");
     setUploadProgress(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  }
+
+  function cancelRequest() {
+    axiosRequest.cancel();
+    send("FAIL");
   }
 
   return (
@@ -83,7 +97,10 @@ const Home = () => {
         <Form.Control type="file" ref={fileInputRef} multiple />
       </Form.Group>
       {state.matches("uploading") && (
-        <ProgressBar animated now={uploadProgress} className="mt-3" />
+        <div className="d-flex align-items-center mt-3">
+          <ProgressBar animated now={uploadProgress} className="w-100" />
+          <span className="mx-3">{uploadProgress + "%"}</span>
+        </div>
       )}
       <Stack
         gap={2}
@@ -91,16 +108,25 @@ const Home = () => {
         direction="horizontal"
       >
         {state.matches("idle") && (
-          <Button variant="primary" onClick={getUploadURL}>
+          <Button variant="primary" onClick={startUpload}>
             Upload
           </Button>
         )}
-        {(state.matches("success") || state.matches("fail")) && (
+        {state.matches("fail") && (
           <Button variant="secondary" onClick={retryUpload}>
             Retry
           </Button>
         )}
-        {state.matches("uploading") && <Button variant="danger">Cancel</Button>}
+        {(state.matches("success") || state.matches("fail")) && (
+          <Button variant="secondary" onClick={resetUpload}>
+            Reset
+          </Button>
+        )}
+        {state.matches("uploading") && (
+          <Button variant="danger" onClick={cancelRequest}>
+            Cancel
+          </Button>
+        )}
       </Stack>
     </Container>
   );

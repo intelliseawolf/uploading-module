@@ -17,12 +17,12 @@ export const uploadMachine = createMachine({
     },
     success: {
       on: {
-        RETRY: { target: "idle" },
+        RESET: { target: "idle" },
       },
     },
     fail: {
       on: {
-        RETRY: { target: "idle" },
+        RESET: { target: "idle" },
       },
     },
   },

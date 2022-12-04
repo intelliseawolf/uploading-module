@@ -5,4 +5,6 @@ const axiosInstance = axios.create({
   timeout: 3000,
 });
 
+export const axiosRequest = axios.CancelToken.source();
+
 export default axiosInstance;
