@@ -23,6 +23,7 @@ const Home = () => {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [state, send] = useMachine(uploadMachine);
+  const currentAxiosRequest = useRef<AbortController | null>(null);
 
   function startUpload() {
     if (!files?.length) {
@@ -44,6 +45,8 @@ const Home = () => {
 
   function uploadFiles(url: string) {
     const formData = new FormData();
+    const controller = new AbortController();
+    currentAxiosRequest.current = controller;
 
     if (!files?.length) return;
     for (let file of files) {
@@ -55,15 +58,18 @@ const Home = () => {
       .post(
         url,
         { files: formData },
-        { onUploadProgress, cancelToken: axiosRequest.token }
+        { onUploadProgress, signal: controller.signal }
       )
       .then(function () {
         send("SUCCESS");
         toast.success("Uploading succed!");
       })
-      .catch(function (error) {
+      .catch(function () {
         send("FAIL");
         toast.error("Uploading fail!");
+      })
+      .finally(() => {
+        currentAxiosRequest.current = null;
       });
   }
 
@@ -80,6 +86,7 @@ const Home = () => {
   function resetUpload() {
     send("RESET");
     setUploadProgress(0);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -87,6 +94,7 @@ const Home = () => {
 
   function cancelRequest() {
     axiosRequest.cancel();
+    currentAxiosRequest.current?.abort();
     send("FAIL");
   }
 

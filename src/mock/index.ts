@@ -9,7 +9,10 @@ const mock = new MockAdapter(axiosInstance);
 const uploadURL = new RegExp(`/uploadFile/*`);
 
 function generateUploadURL() {
-  return "https://localhost:3001/uploadFile/" + randomstring.generate();
+  return (
+    process.env.UPLOAD_URL ||
+    "https://localhost:3001/uploadFile/" + randomstring.generate()
+  );
 }
 
 function generateRandomBoolean() {
@@ -33,7 +36,7 @@ mock.onPost(uploadURL).reply(async function (config) {
   const bytes: number = 1024;
 
   for (const progress of [0, 0.2, 0.4, 0.6, 0.8, 1]) {
-    await sleep(1000);
+    await sleep(500);
     if (config.onUploadProgress) {
       config.onUploadProgress({ loaded: total * progress, total, bytes });
     }
